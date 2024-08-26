@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>天干地支纪时计算器</title>
+    <style>
+        #customTimeInputs {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
+        <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">天干地支纪时计算器</h1>
+
+        <div class="mb-4">
+            <label for="timeMode" class="block text-gray-700 text-sm font-bold mb-2">时间模式：</label>
+            <select id="timeMode" onchange="toggleTimeInputs()" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <option value="current">使用当前时间</option>
+                <option value="custom">自定义时间</option>
+            </select>
+        </div>
+
+        <div id="customTimeInputs" class="mb-4">
+            <div class="input-group">
+                <label for="customDateTime" class="block text-gray-700 text-sm font-bold mb-2">选择日期时间：</label>
+                <input type="datetime-local" id="customDateTime" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label for="solarTerm" class="block text-gray-700 text-sm font-bold mb-2">当前节气：</label>
+            <select id="solarTerm" name="solarTerm" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <option value="">请选择节气</option>
+            </select>
+        </div>
+
+        <button onclick="calculate()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full mb-4">计算</button>
+
+        <div id="currentTime" class="mb-4 text-center text-gray-700"></div>
+
+        <div id="result" class="text-center text-lg font-semibold text-gray-800"></div>
+
+    </div>
+
+    <script>
+        const heavenlyStems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+        const earthlyBranches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+        const solarTerms = [
+            '立春', '雨水', '惊蛰', '春分', '清明', '谷雨', 
+            '立夏', '小满', '芒种', '夏至', '小暑', '大暑', 
+            '立秋', '处暑', '白露', '秋分', '寒露', '霜降', 
+            '立冬', '小雪', '大雪', '冬至', '小寒', '大寒'
+        ];
+
+        // 填充节气下拉菜单
+        const solarTermSelect = document.getElementById('solarTerm');
+        solarTerms.forEach(term => {
+            const option = document.createElement('option');
+            option.value = term;
+            option.textContent = term;
+            solarTermSelect.appendChild(option);
+        });
+
+        function calculateYearStem(year) {
+            let stemIndex = (year - 4) % 10;
+            return heavenlyStems[stemIndex];
+        }
+
+        function calculateYearBranch(year) {
+            let branchIndex = (year - 4) % 12;
+            return earthlyBranches[branchIndex];
+        }
+
+        function calculateMonthStemAndBranch(yearStem, solarTerm) {
+            const monthIndex = Math.floor(solarTerms.indexOf(solarTerm) / 2);
+            const monthBranch = earthlyBranches[(monthIndex + 2) % 12];
+            
+            let baseMonthStem;
+            switch (heavenlyStems.indexOf(yearStem) % 5) {
+                case 0: baseMonthStem = 2; break; // 甲己年
+                case 1: baseMonthStem = 4; break; // 乙庚年
+                case 2: baseMonthStem = 6; break; // 丙辛年
+                case 3: baseMonthStem = 8; break; // 丁壬年
+                case 4: baseMonthStem = 0; break; // 戊癸年
+            }
+            
+            const monthStem = heavenlyStems[(baseMonthStem + monthIndex) % 10];
+            
+            return monthStem + monthBranch;
+        }
+
+        function calculateDayStemAndBranch(year, month, day) {
+            const baseDate = new Date(1900, 0, 31);
+            const targetDate = new Date(year, month - 1, day);
+            const daysDiff = Math.floor((targetDate - baseDate) / (1000 * 60 * 60 * 24));
+            
+            const stemIndex = (daysDiff + 30) % 10;
+            const branchIndex = (daysDiff + 40) % 12;
+            
+            return heavenlyStems[stemIndex] + earthlyBranches[branchIndex];
+        }
+
+        function calculateHourStemAndBranch(dayStem, hour) {
+            // 实现《五鼠遁》歌诀逻辑
+            let firstHourStem;
+            switch (dayStem) {
+                case '甲':
+                case '己':
+                    firstHourStem = '甲';
+                    break;
+                case '乙':
+                case '庚':
+                    firstHourStem = '丙';
+                    break;
+                case '丙':
+                case '辛':
+                    firstHourStem = '戊';
+                    break;
+                case '丁':
+                case '壬':
+                    firstHourStem = '庚';
+                    break;
+                case '戊':
+                case '癸':
+                    firstHourStem = '壬';
+                    break;
+            }
+
+            const stemIndex = (heavenlyStems.indexOf(firstHourStem) + Math.floor((hour + 1) / 2)) % 10;
+            const branchIndex = Math.floor((hour + 1) / 2) % 12;
+            return heavenlyStems[stemIndex] + earthlyBranches[branchIndex];
+        }
+
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = `当前时间：${now.toLocaleString('zh-CN')}`;
+        }
+
+        function toggleTimeInputs() {
+            const timeMode = document.getElementById('timeMode').value;
+            const customTimeInputs = document.getElementById('customTimeInputs');
+            customTimeInputs.style.display = timeMode === 'custom' ? 'block' : 'none';
+        }
+
+        function calculate() {
+            let targetDate;
+            const timeMode = document.getElementById('timeMode').value;
+            if (timeMode === 'current') {
+                targetDate = new Date();
+            } else {
+                const customDateTime = document.getElementById('customDateTime').value;
+                if (!customDateTime) {
+                    alert('请选择自定义日期时间');
+                    return;
+                }
+                targetDate = new Date(customDateTime);
+            }
+
+            const year = targetDate.getFullYear();
+            const month = targetDate.getMonth() + 1;
+            const day = targetDate.getDate();
+            const hour = targetDate.getHours();
+            const solarTerm = document.getElementById('solarTerm').value;
+            const resultDiv = document.getElementById('result');
+
+            if (!solarTerm) {
+                resultDiv.textContent = '请选择当前节气';
+                return;
+            }
+
+            const yearStem = calculateYearStem(year);
+            const yearBranch = calculateYearBranch(year);
+            const monthStemAndBranch = calculateMonthStemAndBranch(yearStem, solarTerm);
+            const dayStemAndBranch = calculateDayStemAndBranch(year, month, day);
+            const hourStemAndBranch = calculateHourStemAndBranch(dayStemAndBranch[0], hour);
+
+            resultDiv.textContent = `${targetDate.toLocaleString('zh-CN')} 的天干地支表示：
+                ${yearStem}${yearBranch}年 ${monthStemAndBranch}月 ${dayStemAndBranch}日 ${hourStemAndBranch}时`;
+        }
+
+        // 页面加载时更新当前时间
+        updateCurrentTime();
+        // 每秒更新一次当前时间
+        setInterval(updateCurrentTime, 1000);
+    </script>
+</body>
+</html>
